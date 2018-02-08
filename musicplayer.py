@@ -15,7 +15,8 @@ class Frame(wx.Frame):
     def __init__(self, parent, id, title, mplayer):
         wx.Frame.__init__(self, parent, id, title)
         self.panel = wx.Panel(self)
- 
+
+        #Setting Path
         sp = wx.StandardPaths.Get()
         self.currentFolder = sp.GetDocumentsDir()
         self.currentVolume = 100
@@ -45,18 +46,13 @@ class Frame(wx.Frame):
         # set up playback timer
         self.playbackTimer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.on_update_playback)
-        #self.playbackSlider = wx.Slider(self, size=wx.DefaultSize)
-        #self.Bind(wx.EVT_SLIDER, self.on_Seek, self.playbackSlider)
+##        self.playbackSlider = wx.Slider(self, size=wx.DefaultSize)
+##        self.Bind(wx.EVT_SLIDER, self.on_Seek, self.playbackSlider)
  
         mainSizer.Add(self.mplayer, 1, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(sliderSizer, 0, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(controlSizer, 0, wx.ALL|wx.CENTER, 5)
         self.panel.SetSizer(mainSizer)
- 
-        self.Bind(mpc.EVT_MEDIA_STARTED, self.on_media_started)
-        self.Bind(mpc.EVT_MEDIA_FINISHED, self.on_media_finished)
-        self.Bind(mpc.EVT_PROCESS_STARTED, self.on_process_started)
-        self.Bind(mpc.EVT_PROCESS_STOPPED, self.on_process_stopped)
  
         self.Show()
         self.panel.Layout()
@@ -82,16 +78,12 @@ class Frame(wx.Frame):
         controlSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnData = [{'bitmap':'special_button.png',
                      'handler':self.on_special, 'name':'special'},
-                   {'bitmap':'player_prev.png',
-                     'handler':self.on_Prev, 'name':'prev'},
                      {'bitmap':'player_play.png',
                     'handler':self.on_play, 'name':'play'},
                    {'bitmap':'player_pause.png', 
                     'handler':self.on_pause, 'name':'pause'},
                    {'bitmap':'player_stop.png',
-                    'handler':self.on_stop, 'name':'stop'},
-                    {'bitmap':'player_next.png',
-                     'handler':self.on_Next, 'name':'next'}]
+                    'handler':self.on_stop, 'name':'stop'}]
         for btn in btnData:
             self.build_btn(btn, controlSizer)
         return controlSizer
@@ -133,29 +125,19 @@ class Frame(wx.Frame):
             path = dlg.GetPath()
             self.currentFolder = os.path.dirname(path[0])
             trackPath = '"%s"' % path.replace("\\", "/")
-            self.mplayer.Loadfile(trackPath)
-##            t_len = self.mplayer.GetProperty('Length')
-##            print t_len
-            self.playbackSlider.SetRange(0, 20)
-            self.playbackTimer.Start(0)
-    #----------------------------------------------------------------------
-    def on_media_started(self, event):
-        print 'Media started!'
- 
-    #----------------------------------------------------------------------
-    def on_media_finished(self, event):
-        print 'Media finished!'
-        self.playbackTimer.Stop()
- 
-    #----------------------------------------------------------------------
+            x=self.mplayer.Loadfile(trackPath)
+
+        self.playbackSlider.SetRange(0,300)
+        self.playbackTimer.Start(0)
+##    #----------------------------------------------------------------------
+
     def on_pause(self, event):
         global mopau
-        global mopla
         mopau=event.GetEventObject()
         self.mplayer.Pause()
         self.playbackTimer.Stop()
-        mopau.Disable()
-        mopla.Enable()
+        self.mopau.Disable()
+        self.mopla.Enable()
         '''
         if x:
             self.mplayer.Pause()
@@ -203,7 +185,6 @@ class Frame(wx.Frame):
     def on_play(self,event):
         
         global mopla
-        global mopau
         mopla=event.GetEventObject()
         self.mplayer.Pause()
         self.playbackTimer.Start(0)
@@ -225,14 +206,6 @@ class Frame(wx.Frame):
  
         event.Skip()'''
     #----------------------------------------------------------------------
-    def on_process_started(self, event):
-        print 'Process started!'
- 
-    #----------------------------------------------------------------------
-    def on_process_stopped(self, event):
-        print 'Process stopped!'
- 
-    #----------------------------------------------------------------------
     def on_set_volume(self, event):
         """
         Sets the volume of the music player
@@ -246,7 +219,8 @@ class Frame(wx.Frame):
         print "stopping..."
         self.mplayer.Stop()
         self.playbackTimer.Stop()
- 
+    #----------------------------------------------------------------------
+
     #----------------------------------------------------------------------
     def on_update_playback(self, event):
         """
