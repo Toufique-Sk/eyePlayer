@@ -49,7 +49,7 @@ class Frame(wx.Frame):
 ##        self.playbackSlider = wx.Slider(self, size=wx.DefaultSize)
 ##        self.Bind(wx.EVT_SLIDER, self.on_Seek, self.playbackSlider)
  
-        mainSizer.Add(self.mplayer, 1, wx.ALL|wx.EXPAND, 5)
+        mainSizer.Add(self.mplayer, 1, wx.ALL|wx.EXPAND, 1)
         mainSizer.Add(sliderSizer, 0, wx.ALL|wx.EXPAND, 5)
         mainSizer.Add(controlSizer, 0, wx.ALL|wx.CENTER, 5)
         self.panel.SetSizer(mainSizer)
@@ -67,6 +67,7 @@ class Frame(wx.Frame):
                                       name=btnDict['name'])
         btn.SetInitialSize()
         btn.Bind(wx.EVT_BUTTON, handler)
+        btn.Bind(wx.EVT_KEY_DOWN, self.onkeypress)
         sizer.Add(btn, 0, wx.LEFT, 3)
         
  
@@ -115,7 +116,7 @@ class Frame(wx.Frame):
         """
         wildcard = "Media Files (*.*)|*.*"
         dlg = wx.FileDialog(
-            self, message="Choose a file",
+            self,message="Choose a file",
             defaultDir=self.currentFolder, 
             defaultFile="",
             wildcard=wildcard,
@@ -125,10 +126,17 @@ class Frame(wx.Frame):
             path = dlg.GetPath()
             self.currentFolder = os.path.dirname(path[0])
             trackPath = '"%s"' % path.replace("\\", "/")
-            x=self.mplayer.Loadfile(trackPath)
+            self.mplayer.Loadfile(trackPath)
+            
 
         self.playbackSlider.SetRange(0,300)
-        self.playbackTimer.Start(0)
+        self.playbackTimer.Start(100)
+    '''def get_mplayer_length(filename):
+        result = subprocess.Popen(['mplayer', '-vo', 'null', '-ao', 'null',
+        '-frames', '0', '-identify', filename], stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
+        duration = [x for x in result.stdout.readlines() if "ID_LENGTH" in x]
+        return duration[0].split('=')[1].strip('\n')'''
 ##    #----------------------------------------------------------------------
 
     def on_pause(self, event):
@@ -138,21 +146,12 @@ class Frame(wx.Frame):
         self.playbackTimer.Stop()
         self.mopau.Disable()
         self.mopla.Enable()
-        '''
-        if x:
-            self.mplayer.Pause()
-            print "Playing..."
-            #self.playbackTimer.Stop()
-            #self.playbackTimer.Start()'''
- 
-    #----------------------------------------------------------------------
-    def on_Prev(self,event):
-        print  "Hello"
         
     #----------------------------------------------------------------------
     def on_special(self,event):
         cap = cv2.VideoCapture(0)
         _playing= self.mplayer.playing
+        print _playing
         while True:
             ret, img = cap.read()
             #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -163,24 +162,26 @@ class Frame(wx.Frame):
                 #roi_color = img[y:y+h, x:x+w]
                 '''
             eyes = eye_cascade.detectMultiScale(img,1.3,5)
+            if type(eyes) == tuple:
+                if self.playbackTimer.IsRunning():
+                    self.mplayer.Pause()
+                    self.playbackTimer.Stop()
+            if type(eyes)== np.ndarray:
+                if not self.playbackTimer.IsRunning():
+                    self.mplayer.Pause()
+                    self.playbackTimer.Start(100)
             #Draw rectangle along eyes
-            for (ex,ey,ew,eh) in eyes:
+            '''for (ex,ey,ew,eh) in eyes:
                 cv2.rectangle(img,(ex,ey),(ex+ew,ey+eh),(0,255,0),2)
                 if not self.playbackTimer.IsRunning():
                     self.mplayer.Pause()
-                    self.playbackTimer.Start(0)
-            cv2.imshow('img',img)
-            if self.playbackTimer.IsRunning():
-                self.mplayer.Pause()
-                self.playbackTimer.Stop()
-                
+                    self.playbackTimer.Start(0)'''
+            cv2.imshow('img',img)   
             k = cv2.waitKey(30) & 0xff
             if k == 27:
                 break
-        cap.release() 
-    #----------------------------------------------------------------------
-    def on_Next(self,event):
-        print "hello"
+        cap.release()
+        
     #----------------------------------------------------------------------
     def on_play(self,event):
         
@@ -190,21 +191,7 @@ class Frame(wx.Frame):
         self.playbackTimer.Start(0)
         mopla.Disable()
         mopau.Enable()
-        '''
-        if not event.GetIsDown():
-            self.on_pause()
-            return
- 
-        if not self.mediaPlayer.Play():
-            wx.MessageBox("Unable to Play media : Unsupported format?",
-                          "ERROR",
-                          wx.ICON_ERROR | wx.OK)
-        else:
-            self.mediaPlayer.SetInitialSize()
-            self.GetSizer().Layout()
-            self.playbackSlider.SetRange(0, self.mediaPlayer.Length())
- 
-        event.Skip()'''
+
     #----------------------------------------------------------------------
     def on_set_volume(self, event):
         """
@@ -237,16 +224,9 @@ class Frame(wx.Frame):
             offset = int(offset)
             self.playbackSlider.SetValue(offset)
             secsPlayed = time.strftime('%M:%S', time.gmtime(offset))
-            self.trackCounter.SetLabel(secsPlayed) 
-        '''offset = self.mplayer.GetTimePos()
-        print offset
-        mod_off = str(offset)[-1]
-        if mod_off == '0':
-            print "mod_off"
-            offset = int(offset)
-            self.playbackSlider.SetValue(offset)
-            secsPlayed = time.strftime('%M:%S', time.gmtime(offset))
-            self.trackCounter.SetLabel(secsPlayed)'''
+            self.trackCounter.SetLabel(secsPlayed)
+
+            
 if __name__ == "__main__":
     import os, sys
     
